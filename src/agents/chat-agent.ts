@@ -27,8 +27,8 @@ export async function getChatAgent(): Promise<Agent> {
     getEssayAgent(),
   ]);
   _chatAgent = new Agent({
-    id: "chat-agent",
-    name: "Chat Agent",
+    id: "triage-agent",
+    name: "Triage Agent",
     description: "Triage agent with chat memory for CLI conversations.",
     instructions: `You are a skilled triage agent. Your role is to triage the user's request and determine the best agent to use (poem or essay). Be concise and helpful.`,
     agents: {
