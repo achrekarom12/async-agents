@@ -37,7 +37,19 @@ fastify.post("/api/chat", async (request, reply) => {
         for await (const chunk of output.fullStream) {
             console.log("Chunk type:", chunk.type);
             if (chunk.type === "text-delta") {
-                reply.raw.write(`data: ${JSON.stringify({ text: chunk.payload.text })}\n\n`);
+                reply.raw.write(`data: ${JSON.stringify({ type: "text", text: chunk.payload.text })}\n\n`);
+            } else if (chunk.type === "tool-call") {
+                reply.raw.write(`data: ${JSON.stringify({
+                    type: "tool-call",
+                    toolName: chunk.payload.toolName,
+                    args: chunk.payload.args
+                })}\n\n`);
+            } else if (chunk.type === "tool-result") {
+                reply.raw.write(`data: ${JSON.stringify({
+                    type: "tool-result",
+                    toolName: chunk.payload.toolName,
+                    result: chunk.payload.result
+                })}\n\n`);
             } else if (chunk.type === "finish") {
                 reply.raw.write(`data: [DONE]\n\n`);
             }
