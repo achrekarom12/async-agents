@@ -20,14 +20,12 @@ async function streamReply(chatAgent: Awaited<ReturnType<typeof getChatAgent>>, 
   });
 
   for await (const chunk of output.fullStream) {
-    // console.log(chunk, '\n\n');
-
-    if (chunk.type === 'start') {
-      console.log('start\n');
-    }
-
     if (chunk.type === 'text-delta') {
       process.stdout.write(chunk.payload.text);
+    } else if (chunk.type === 'tool-output') {
+      if (chunk.payload?.output?.type === 'text-delta') {
+        process.stdout.write(chunk.payload.output.payload.text);
+      }
     }
   }
 }

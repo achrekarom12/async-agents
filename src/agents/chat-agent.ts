@@ -34,9 +34,9 @@ export async function getChatAgent(): Promise<Agent> {
     description: "Triage agent with chat memory for CLI conversations.",
     instructions: `You are a skilled triage agent. Your role is to triage the user's request and determine the best agent to use (poem or essay). Be concise and helpful.`,
     agents: {
-      // poemAgent,
-      // essayAgent,
-      fileSystemAgent,
+      poemAgent,
+      essayAgent,
+      // fileSystemAgent,
     },
     model: llm("gemini-2.5-flash-lite"),
     memory: new Memory({ storage }),

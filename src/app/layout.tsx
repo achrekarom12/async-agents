@@ -1,8 +1,9 @@
+import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-    title: "Chat AI",
+    title: "Agents",
     description: "Minimal AI Chat Frontend",
 };
 
@@ -14,7 +15,7 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className="antialiased">
-                {children}
+                <TooltipProvider>{children}</TooltipProvider>
             </body>
         </html>
     );
