@@ -1,7 +1,8 @@
 import { createGoogleGenerativeAI, GoogleGenerativeAIProvider } from '@ai-sdk/google';
-import { GEMINI_API_KEY } from './env';
+import { createAzure, AzureOpenAIProvider } from '@ai-sdk/azure';
+import { GEMINI_API_KEY, AZURE_OPENAI_CHAT_API_KEY, AZURE_OPENAI_CHAT_ENDPOINT } from './env';
 
-type IProvider = GoogleGenerativeAIProvider;
+type IProvider = GoogleGenerativeAIProvider | AzureOpenAIProvider;
 
 export async function getProvider(providerName: string): Promise<IProvider> {
     switch (providerName) {
@@ -11,6 +12,14 @@ export async function getProvider(providerName: string): Promise<IProvider> {
             }
             return createGoogleGenerativeAI({
                 apiKey: GEMINI_API_KEY,
+            });
+        case "AZURE":
+            if (!AZURE_OPENAI_CHAT_API_KEY && !AZURE_OPENAI_CHAT_ENDPOINT) {
+                throw new Error("AZURE_API_KEY is not set");
+            }
+            return createAzure({
+                apiKey: AZURE_OPENAI_CHAT_API_KEY,
+                baseURL: AZURE_OPENAI_CHAT_ENDPOINT,
             });
         default:
             throw new Error(`Unsupported provider: ${providerName}`);

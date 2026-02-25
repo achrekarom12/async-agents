@@ -9,6 +9,7 @@
     "cli": "tsx src/index.ts"
   },
   "dependencies": {
+    "@ai-sdk/azure": "^3.0.34",
     "@ai-sdk/google": "^3.0.29",
     "@ai-sdk/react": "^3.0.87",
     "@fastify/cors": "^11.2.0",
