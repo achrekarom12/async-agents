@@ -25,6 +25,10 @@ async function streamReply(chatAgent: Awaited<ReturnType<typeof getChatAgent>>, 
     } else if (chunk.type === 'tool-output') {
       if (chunk.payload?.output?.type === 'text-delta') {
         process.stdout.write(chunk.payload.output.payload.text);
+      } else if (chunk.payload?.output?.type === 'tool-call') {
+        console.log(`\n[Subagent Tool Call: ${chunk.payload.output.payload.toolName}]`);
+      } else if (chunk.payload?.output?.type === 'tool-result') {
+        console.log(`\n[Subagent Tool Result: ${chunk.payload.output.payload.toolName}]`);
       }
     }
   }

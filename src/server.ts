@@ -40,18 +40,34 @@ fastify.post("/api/chat", async (request, reply) => {
             } else if (chunk.type === "tool-output") {
                 if (chunk.payload?.output?.type === "text-delta") {
                     reply.raw.write(`data: ${JSON.stringify({ type: "text", text: chunk.payload.output.payload.text })}\n\n`);
+                } else if (chunk.payload?.output?.type === "tool-call") {
+                    reply.raw.write(`data: ${JSON.stringify({
+                        type: "tool-call",
+                        toolName: chunk.payload.output.payload.toolName,
+                        args: chunk.payload.output.payload.args,
+                        toolCallId: chunk.payload.output.payload.toolCallId
+                    })}\n\n`);
+                } else if (chunk.payload?.output?.type === "tool-result") {
+                    reply.raw.write(`data: ${JSON.stringify({
+                        type: "tool-result",
+                        toolName: chunk.payload.output.payload.toolName,
+                        result: chunk.payload.output.payload.result,
+                        toolCallId: chunk.payload.output.payload.toolCallId
+                    })}\n\n`);
                 }
             } else if (chunk.type === "tool-call") {
                 reply.raw.write(`data: ${JSON.stringify({
                     type: "tool-call",
                     toolName: chunk.payload.toolName,
-                    args: chunk.payload.args
+                    args: chunk.payload.args,
+                    toolCallId: chunk.payload.toolCallId
                 })}\n\n`);
             } else if (chunk.type === "tool-result") {
                 reply.raw.write(`data: ${JSON.stringify({
                     type: "tool-result",
                     toolName: chunk.payload.toolName,
-                    result: chunk.payload.result
+                    result: chunk.payload.result,
+                    toolCallId: chunk.payload.toolCallId
                 })}\n\n`);
             } else if (chunk.type === "finish") {
                 reply.raw.write(`data: [DONE]\n\n`);
