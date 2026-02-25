@@ -35,8 +35,12 @@ fastify.post("/api/chat", async (request, reply) => {
 
         console.log("Starting stream for chatId:", chatId);
         for await (const chunk of output.fullStream) {
+            console.log(chunk.type)
             if (chunk.type === "text-delta") {
                 reply.raw.write(`data: ${JSON.stringify({ type: "text", text: chunk.payload.text })}\n\n`);
+            } else if (chunk.type === "reasoning-delta" && 'payload' in chunk) {
+                console.log("Reasoning chunk:", chunk);
+                reply.raw.write(`data: ${JSON.stringify({ type: "reasoning", text: (chunk.payload as { text: string }).text })}\n\n`);
             } else if (chunk.type === "tool-output") {
                 if (chunk.payload?.output?.type === "text-delta") {
                     reply.raw.write(`data: ${JSON.stringify({ type: "text", text: chunk.payload.output.payload.text })}\n\n`);

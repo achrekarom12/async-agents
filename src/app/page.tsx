@@ -18,15 +18,29 @@ import {
     PromptInputFooter,
 } from "@/components/ai-elements/prompt-input";
 import {
+    Reasoning,
+    ReasoningContent,
+    ReasoningTrigger,
+} from "@/components/ai-elements/reasoning";
+import {
     Tool,
     ToolContent,
     ToolHeader,
     ToolInput,
     ToolOutput,
 } from "@/components/ai-elements/tool";
+import {
+    Artifact,
+    ArtifactHeader,
+    ArtifactTitle,
+    ArtifactDescription,
+    ArtifactContent,
+    ArtifactClose,
+} from "@/components/ai-elements/artifact";
 import { Bot, Terminal } from "lucide-react";
 import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface ToolCall {
     id: string;
@@ -38,6 +52,7 @@ interface ToolCall {
 interface ChatMessage {
     role: "user" | "assistant";
     content: string;
+    reasoning?: string;
     toolCalls?: ToolCall[];
 }
 
@@ -46,6 +61,12 @@ export default function ChatPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [chatId, setChatId] = useState("");
     const [inputValue, setInputValue] = useState("");
+    const [artifact, setArtifact] = useState<{
+        title: string;
+        description: string;
+        content: string;
+        language?: string;
+    } | null>(null);
 
     useEffect(() => {
         setChatId(`chat_${nanoid()}`);
@@ -76,8 +97,12 @@ export default function ChatPage() {
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let assistantMessage = "";
+            let assistantReasoning = "";
 
-            setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+            setMessages((prev) => [
+                ...prev,
+                { role: "assistant", content: "", reasoning: "" },
+            ]);
 
             let buffer = "";
             while (true) {
@@ -105,6 +130,17 @@ export default function ChatPage() {
                                         const lastMessage = newMessages[newMessages.length - 1];
                                         if (lastMessage.role === "assistant") {
                                             lastMessage.content = assistantMessage;
+                                        }
+                                        return newMessages;
+                                    });
+                                } else if (parsed.type === "reasoning" && parsed.text) {
+                                    assistantReasoning += parsed.text;
+                                    setMessages((prev) => {
+                                        const newMessages = [...prev];
+                                        const lastMessage =
+                                            newMessages[newMessages.length - 1];
+                                        if (lastMessage.role === "assistant") {
+                                            lastMessage.reasoning = assistantReasoning;
                                         }
                                         return newMessages;
                                     });
@@ -141,6 +177,11 @@ export default function ChatPage() {
                                             );
                                             if (toolCall) {
                                                 toolCall.result = parsed.result;
+
+                                                // If this is the generate_artifact tool, update the artifact state
+                                                if (toolCall.name === "generate_artifact" || toolCall.name === "generateArtifact") {
+                                                    setArtifact(parsed.result);
+                                                }
                                             }
                                         }
                                         return newMessages;
@@ -169,105 +210,142 @@ export default function ChatPage() {
     };
 
     return (
-        <div className="flex flex-col h-screen bg-background text-foreground font-sans max-w-4xl mx-auto px-4">
-            {/* Header */}
-            <header className="flex items-center justify-between py-6">
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    <h1 className="text-sm font-semibold tracking-tight">AI Assistant</h1>
-                </div>
-                <div className="text-[10px] text-muted-foreground font-mono tracking-widest uppercase">
-                    {chatId.split("_")[1]?.slice(0, 8)}
-                </div>
-            </header>
+        <div className={cn(
+            "flex h-screen bg-background text-foreground font-sans transition-all duration-300",
+            artifact ? "max-w-full" : "max-w-4xl mx-auto px-4"
+        )}>
+            {/* Main Chat Section */}
+            <div className={cn(
+                "flex flex-col h-full transition-all duration-300",
+                artifact ? "w-1/2 border-r px-4" : "w-full"
+            )}>
+                {/* Header */}
+                <header className="flex items-center justify-between py-6">
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                        <h1 className="text-sm font-semibold tracking-tight">AI Assistant</h1>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground font-mono tracking-widest uppercase">
+                        {chatId.split("_")[1]?.slice(0, 8)}
+                    </div>
+                </header>
 
-            {/* Messages */}
-            <Conversation className="flex-1">
-                <ConversationContent>
-                    {messages.length === 0 ? (
-                        <ConversationEmptyState
-                            icon={<Bot size={40} className="text-muted-foreground/50" />}
-                            title="Welcome to AI Assistant"
-                            description="Start a conversation! I can help you with your tasks."
-                        />
-                    ) : (
-                        messages.map((m, i) => (
-                            <Message key={i} from={m.role}>
-                                <MessageContent>
-                                    {m.toolCalls && m.toolCalls.length > 0 && (
-                                        <div className="flex flex-col gap-2 w-full mb-2">
-                                            {m.toolCalls.map((tc, j) => (
-                                                <Tool key={j} defaultOpen={false}>
-                                                    <ToolHeader
-                                                        type="dynamic-tool"
-                                                        toolName={tc.name}
-                                                        state={
-                                                            tc.result !== undefined
-                                                                ? "output-available"
-                                                                : "input-available"
-                                                        }
-                                                    />
-                                                    <ToolContent>
-                                                        <ToolInput input={tc.args} />
-                                                        {tc.result !== undefined && (
-                                                            <ToolOutput
-                                                                output={
-                                                                    <div className="bg-muted/50 p-2 rounded text-xs font-mono overflow-auto max-h-40 no-scrollbar">
-                                                                        {typeof tc.result === "string"
-                                                                            ? tc.result
-                                                                            : JSON.stringify(tc.result, null, 2)}
-                                                                    </div>
-                                                                }
-                                                                errorText={undefined}
-                                                            />
-                                                        )}
-                                                    </ToolContent>
-                                                </Tool>
-                                            ))}
-                                        </div>
-                                    )}
-                                    {m.content && <MessageResponse>{m.content}</MessageResponse>}
-                                    {isLoading &&
-                                        i === messages.length - 1 &&
-                                        m.role === "assistant" &&
-                                        !m.content && (
-                                            <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
-                                                <Terminal size={14} />
-                                                <span>Thinking...</span>
+                {/* Messages */}
+                <Conversation className="flex-1">
+                    <ConversationContent>
+                        {messages.length === 0 ? (
+                            <ConversationEmptyState
+                                icon={<Bot size={40} className="text-muted-foreground/50" />}
+                                title="Welcome to AI Assistant"
+                                description="Start a conversation! I can help you with your tasks."
+                            />
+                        ) : (
+                            messages.map((m, i) => (
+                                <Message key={i} from={m.role}>
+                                    <MessageContent>
+                                        {m.toolCalls && m.toolCalls.length > 0 && (
+                                            <div className="flex flex-col gap-2 w-full mb-2">
+                                                {m.toolCalls.map((tc, j) => (
+                                                    <Tool key={j} defaultOpen={false}>
+                                                        <ToolHeader
+                                                            type="dynamic-tool"
+                                                            toolName={tc.name}
+                                                            state={
+                                                                tc.result !== undefined
+                                                                    ? "output-available"
+                                                                    : "input-available"
+                                                            }
+                                                        />
+                                                        <ToolContent>
+                                                            <ToolInput input={tc.args} />
+                                                            {tc.result !== undefined && (
+                                                                <ToolOutput
+                                                                    output={
+                                                                        <div className="bg-muted/50 p-2 rounded text-xs font-mono overflow-auto max-h-40 no-scrollbar">
+                                                                            {typeof tc.result === "string"
+                                                                                ? tc.result
+                                                                                : JSON.stringify(tc.result, null, 2)}
+                                                                        </div>
+                                                                    }
+                                                                    errorText={undefined}
+                                                                />
+                                                            )}
+                                                        </ToolContent>
+                                                    </Tool>
+                                                ))}
                                             </div>
                                         )}
-                                </MessageContent>
-                            </Message>
-                        ))
-                    )}
-                </ConversationContent>
-                <ConversationScrollButton />
-            </Conversation>
+                                        {m.reasoning && (
+                                            <Reasoning
+                                                isStreaming={
+                                                    isLoading && i === messages.length - 1
+                                                }
+                                            >
+                                                <ReasoningTrigger />
+                                                <ReasoningContent>{m.reasoning}</ReasoningContent>
+                                            </Reasoning>
+                                        )}
+                                        {m.content && <MessageResponse>{m.content}</MessageResponse>}
+                                        {isLoading &&
+                                            i === messages.length - 1 &&
+                                            m.role === "assistant" &&
+                                            !m.content && (
+                                                <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
+                                                    <Terminal size={14} />
+                                                    <span>Thinking...</span>
+                                                </div>
+                                            )}
+                                    </MessageContent>
+                                </Message>
+                            ))
+                        )}
+                    </ConversationContent>
+                    <ConversationScrollButton />
+                </Conversation>
 
-            {/* Input */}
-            <footer className="py-6 pt-0">
-                <PromptInput
-                    onSubmit={(message) => handleSubmit(message)}
-                    className="relative w-full"
-                    inputGroupClassName="rounded-xl border bg-background shadow-sm focus-within:ring-1 focus-within:ring-ring overflow-hidden"
-                >
-                    <PromptInputTextarea
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        placeholder="Type your message..."
-                        className="min-h-[44px] w-full resize-none border-0 bg-transparent px-4 py-3 focus-visible:ring-0 text-sm"
-                    />
-                    <PromptInputFooter className="px-4 pb-3">
-                        <div className="flex items-center gap-2">
-                            {/* Optional actions like attachments can go here */}
-                        </div>
-                        <PromptInputSubmit
-                            disabled={isLoading || !inputValue.trim()}
-                            status={isLoading ? "streaming" : "ready"}
+                {/* Input */}
+                <footer className="py-6 pt-0">
+                    <PromptInput
+                        onSubmit={(message) => handleSubmit(message)}
+                        className="relative w-full"
+                        inputGroupClassName="rounded-xl border bg-background shadow-sm focus-within:ring-1 focus-within:ring-ring overflow-hidden"
+                    >
+                        <PromptInputTextarea
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            placeholder="Type your message..."
+                            className="min-h-[44px] w-full resize-none border-0 bg-transparent px-4 py-3 focus-visible:ring-0 text-sm"
                         />
-                    </PromptInputFooter>
-                </PromptInput>
-            </footer>
+                        <PromptInputFooter className="px-4 pb-3">
+                            <div className="flex items-center gap-2">
+                                {/* Optional actions like attachments can go here */}
+                            </div>
+                            <PromptInputSubmit
+                                disabled={isLoading || !inputValue.trim()}
+                                status={isLoading ? "streaming" : "ready"}
+                            />
+                        </PromptInputFooter>
+                    </PromptInput>
+                </footer>
+            </div>
+
+            {/* Artifact Right Panel */}
+            {artifact && (
+                <div className="w-1/2 h-full p-4 overflow-hidden flex flex-col animate-in fade-in slide-in-from-right-4 duration-500">
+                    <Artifact className="h-full flex flex-col">
+                        <ArtifactHeader>
+                            <div className="flex flex-col">
+                                <ArtifactTitle>{artifact.title}</ArtifactTitle>
+                                <ArtifactDescription>{artifact.description}</ArtifactDescription>
+                            </div>
+                            <ArtifactClose onClick={() => setArtifact(null)} />
+                        </ArtifactHeader>
+                        <ArtifactContent className="whitespace-pre-wrap font-sans text-sm leading-relaxed overflow-y-auto custom-scrollbar">
+                            {artifact.content}
+                        </ArtifactContent>
+                    </Artifact>
+                </div>
+            )}
         </div>
     );
 }
