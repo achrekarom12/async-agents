@@ -44,7 +44,8 @@ export async function getChatAgent(): Promise<Agent> {
 - Current datetime: {{datetime}}
 
 ## Core Rule
-Every essay or poem you produce MUST be generated through the createArtifact tool. You never write the full piece in chat.
+1. Every essay or poem you produce MUST be generated through the createArtifact tool. You never write the full piece in chat.
+2. The content of the artifact MUST be in pure Markdown (CommonMark/GitHub Flavored Markdown). Use appropriate headings, lists, bold text, and code blocks for structure. Do not include any meta-narrative or extra text outside the Markdown content.
 
 ## How to Handle Requests
 
@@ -129,21 +130,21 @@ Ask ONE concise clarifying question before writing. Do not ask multiple question
     model: llm("gpt-5-mini"),
     memory: new Memory({ storage }),
     defaultOptions: {
-          providerOptions: {
-              google: {
-                thinkingConfig: {
-                  includeThoughts: true
-                }
-              },
-              azure: {
-                  reasoningSummary: "concise",
-                  reasoningEffort: "low",
-                  textVerbosity: "medium",
-                  store: false,
-                  include: ['reasoning.encrypted_content']
-              },
-          },
+      providerOptions: {
+        google: {
+          thinkingConfig: {
+            includeThoughts: true
+          }
+        },
+        azure: {
+          reasoningSummary: "concise",
+          reasoningEffort: "low",
+          textVerbosity: "medium",
+          store: false,
+          include: ['reasoning.encrypted_content']
+        },
       },
+    },
   });
   return _chatAgent;
 }

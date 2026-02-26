@@ -36,8 +36,17 @@ import {
     ArtifactDescription,
     ArtifactContent,
     ArtifactClose,
+    ArtifactActions,
+    ArtifactAction,
 } from "@/components/ai-elements/artifact";
-import { Bot, Terminal } from "lucide-react";
+import { Bot, Terminal, Download, Sparkles } from "lucide-react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -67,6 +76,7 @@ export default function ChatPage() {
         content: string;
         language?: string;
     } | null>(null);
+    const [agentId, setAgentId] = useState("chat-agent");
 
     useEffect(() => {
         setChatId(`chat_${nanoid()}`);
@@ -81,7 +91,7 @@ export default function ChatPage() {
         setIsLoading(true);
 
         try {
-            const response = await fetch("http://localhost:8000/api/chat", {
+            const response = await fetch("http://10.10.40.73:8000/api/chat", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -89,6 +99,7 @@ export default function ChatPage() {
                 body: JSON.stringify({
                     message: message.text,
                     chatId: chatId,
+                    agentId: agentId,
                 }),
             });
 
@@ -209,6 +220,20 @@ export default function ChatPage() {
         }
     };
 
+    const handleDownload = () => {
+        if (!artifact) return;
+
+        const blob = new Blob([artifact.content], { type: "text/markdown" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${artifact.title.replace(/[/\\?%*:|"<>]/g, '-') || 'artifact'}.md`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div className={cn(
             "flex h-screen bg-background text-foreground font-sans transition-all duration-300",
@@ -225,8 +250,29 @@ export default function ChatPage() {
                         <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                         <h1 className="text-sm font-semibold tracking-tight">AI Assistant</h1>
                     </div>
-                    <div className="text-[10px] text-muted-foreground font-mono tracking-widest uppercase">
-                        {chatId.split("_")[1]?.slice(0, 8)}
+                    <div className="flex items-center gap-4">
+                        <Select value={agentId} onValueChange={setAgentId}>
+                            <SelectTrigger size="sm" className="w-[140px] h-7 text-[10px] font-medium uppercase tracking-wider">
+                                <SelectValue placeholder="Select Agent" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="chat-agent">
+                                    <div className="flex items-center gap-2">
+                                        <Bot size={12} />
+                                        <span>Chat Agent</span>
+                                    </div>
+                                </SelectItem>
+                                <SelectItem value="skillful-agent">
+                                    <div className="flex items-center gap-2">
+                                        <Sparkles size={12} />
+                                        <span>Skillful Agent</span>
+                                    </div>
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <div className="text-[10px] text-muted-foreground font-mono tracking-widest uppercase">
+                            {chatId.split("_")[1]?.slice(0, 8)}
+                        </div>
                     </div>
                 </header>
 
@@ -338,10 +384,21 @@ export default function ChatPage() {
                                 <ArtifactTitle>{artifact.title}</ArtifactTitle>
                                 <ArtifactDescription>{artifact.description}</ArtifactDescription>
                             </div>
-                            <ArtifactClose onClick={() => setArtifact(null)} />
+                            <div className="flex items-center gap-2">
+                                <ArtifactActions>
+                                    <ArtifactAction
+                                        icon={Download}
+                                        tooltip="Download as Markdown"
+                                        onClick={handleDownload}
+                                    />
+                                </ArtifactActions>
+                                <ArtifactClose onClick={() => setArtifact(null)} />
+                            </div>
                         </ArtifactHeader>
-                        <ArtifactContent className="whitespace-pre-wrap font-sans text-sm leading-relaxed overflow-y-auto custom-scrollbar">
-                            {artifact.content}
+                        <ArtifactContent className="p-0 overflow-y-auto custom-scrollbar">
+                            <div className="p-6">
+                                <MessageResponse>{artifact.content}</MessageResponse>
+                            </div>
                         </ArtifactContent>
                     </Artifact>
                 </div>

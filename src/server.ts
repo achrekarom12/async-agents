@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { getChatAgent } from "./agents/chat-agent";
+import { getSkillfulAgent } from "./agents/skillful-agent";
 
 const fastify = Fastify({
     logger: true,
@@ -12,17 +13,22 @@ fastify.register(cors, {
 
 fastify.post("/api/chat", async (request, reply) => {
     try {
-        const { message, chatId } = request.body as { message: string, chatId: string };
+        const { message, chatId, agentId } = request.body as { message: string, chatId: string, agentId?: string };
 
         if (!message || !chatId) {
             return reply.status(400).send({ error: "message and chatId are required" });
         }
 
-        console.log("Request received:", { message, chatId });
+        console.log("Request received:", { message, chatId, agentId });
 
-        const chatAgent = await getChatAgent();
+        let agent;
+        if (agentId === "skillful-agent") {
+            agent = await getSkillfulAgent();
+        } else {
+            agent = await getChatAgent();
+        }
 
-        const output = await chatAgent.stream(message, {
+        const output = await agent.stream(message, {
             memory: { thread: chatId, resource: "web" },
         });
 
@@ -35,11 +41,9 @@ fastify.post("/api/chat", async (request, reply) => {
 
         console.log("Starting stream for chatId:", chatId);
         for await (const chunk of output.fullStream) {
-            console.log(chunk.type)
             if (chunk.type === "text-delta") {
                 reply.raw.write(`data: ${JSON.stringify({ type: "text", text: chunk.payload.text })}\n\n`);
             } else if (chunk.type === "reasoning-delta" && 'payload' in chunk) {
-                console.log("Reasoning chunk:", chunk);
                 reply.raw.write(`data: ${JSON.stringify({ type: "reasoning", text: (chunk.payload as { text: string }).text })}\n\n`);
             } else if (chunk.type === "tool-output") {
                 if (chunk.payload?.output?.type === "text-delta") {
