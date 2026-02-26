@@ -3,6 +3,7 @@ import * as path from "path";
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
 import { LibSQLStore } from "@mastra/libsql";
+import { Mastra } from "@mastra/core";
 import { getProvider } from "../client";
 
 import { generateArtifactTool } from "../tools/artifact";
@@ -137,5 +138,14 @@ export async function getSkillfulAgent(): Promise<Agent> {
             },
         },
     });
+
+    // Register agent in a Mastra instance to enable persistence
+    new Mastra({
+        storage,
+        agents: {
+            "code-explainer": _skillfulAgent,
+        },
+    });
+
     return _skillfulAgent;
 }
