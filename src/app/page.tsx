@@ -48,7 +48,8 @@ import {
     ConfirmationActions,
     ConfirmationAction,
 } from "@/components/ai-elements/confirmation";
-import { Bot, Terminal, Download, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Bot, Terminal, Download, Sparkles, Wrench } from "lucide-react";
 import {
     Select,
     SelectContent,
@@ -102,7 +103,7 @@ export default function ChatPage() {
         setIsLoading(true);
 
         try {
-            const response = await fetch("http://10.10.40.73:8000/api/chat", {
+            const response = await fetch("http://127.0.0.1:8000/api/chat", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -264,7 +265,7 @@ export default function ChatPage() {
         });
 
         try {
-            const response = await fetch("http://10.10.40.73:8000/api/chat/approve", {
+            const response = await fetch("http://127.0.0.1:8000/api/chat/approve", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -480,14 +481,15 @@ export default function ChatPage() {
                                                     if (tc.status === "approval-requested") {
                                                         return (
                                                             <Confirmation key={j} state="approval-requested" approval={{ id: tc.id }} className="mb-2">
-                                                                <ConfirmationTitle>
-                                                                    Tool Call Approval Required
+                                                                <ConfirmationTitle className="flex items-center gap-2 bg-green-500/10 px-2 py-0.5 rounded-full">
+                                                                    <span>Action Required</span>
+                                                                    <Badge variant="outline" className="ml-auto font-mono text-[10px] bg-background/50">
+                                                                        <Wrench className="size-3 mr-1" />
+                                                                        {tc.name}
+                                                                    </Badge>
                                                                 </ConfirmationTitle>
                                                                 <ConfirmationRequest>
-                                                                    Agent wants to call <strong>{tc.name}</strong> with args:
-                                                                    <pre className="mt-2 p-2 bg-muted rounded text-[10px] overflow-auto">
-                                                                        {JSON.stringify(tc.args, null, 2)}
-                                                                    </pre>
+                                                                    wants to execute this tool
                                                                 </ConfirmationRequest>
                                                                 <ConfirmationActions>
                                                                     <ConfirmationAction
@@ -509,9 +511,9 @@ export default function ChatPage() {
                                                     if (tc.status === "approved") {
                                                         return (
                                                             <Confirmation key={j} state="approval-responded" approval={{ id: tc.id, approved: true }} className="mb-2">
-                                                                <ConfirmationTitle>Tool Call Approved</ConfirmationTitle>
+                                                                <ConfirmationTitle>Confirmed</ConfirmationTitle>
                                                                 <ConfirmationAccepted>
-                                                                    You approved the call to <strong>{tc.name}</strong>.
+                                                                    Execution of <strong>{tc.name}</strong> approved.
                                                                 </ConfirmationAccepted>
                                                             </Confirmation>
                                                         );
@@ -520,9 +522,9 @@ export default function ChatPage() {
                                                     if (tc.status === "rejected") {
                                                         return (
                                                             <Confirmation key={j} state="approval-responded" approval={{ id: tc.id, approved: false }} className="mb-2">
-                                                                <ConfirmationTitle>Tool Call Declined</ConfirmationTitle>
+                                                                <ConfirmationTitle>Declined</ConfirmationTitle>
                                                                 <ConfirmationRejected>
-                                                                    You declined the call to <strong>{tc.name}</strong>.
+                                                                    Execution of <strong>{tc.name}</strong> cancelled.
                                                                 </ConfirmationRejected>
                                                             </Confirmation>
                                                         );

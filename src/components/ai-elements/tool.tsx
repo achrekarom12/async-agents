@@ -26,7 +26,10 @@ export type ToolProps = ComponentProps<typeof Collapsible>;
 
 export const Tool = ({ className, ...props }: ToolProps) => (
   <Collapsible
-    className={cn("group not-prose mb-4 w-full rounded-md border", className)}
+    className={cn(
+      "group not-prose mb-4 w-full rounded-xl border border-secondary/20 bg-transparent overflow-hidden transition-all duration-200",
+      className
+    )}
     {...props}
   />
 );
@@ -37,13 +40,13 @@ export type ToolHeaderProps = {
   title?: string;
   className?: string;
 } & (
-  | { type: ToolUIPart["type"]; state: ToolUIPart["state"]; toolName?: never }
-  | {
+    | { type: ToolUIPart["type"]; state: ToolUIPart["state"]; toolName?: never }
+    | {
       type: DynamicToolUIPart["type"];
       state: DynamicToolUIPart["state"];
       toolName: string;
     }
-);
+  );
 
 const statusLabels: Record<ToolPart["state"], string> = {
   "approval-requested": "Awaiting Approval",
@@ -56,17 +59,17 @@ const statusLabels: Record<ToolPart["state"], string> = {
 };
 
 const statusIcons: Record<ToolPart["state"], ReactNode> = {
-  "approval-requested": <ClockIcon className="size-4 text-yellow-600" />,
-  "approval-responded": <CheckCircleIcon className="size-4 text-blue-600" />,
-  "input-available": <ClockIcon className="size-4 animate-pulse" />,
-  "input-streaming": <CircleIcon className="size-4" />,
-  "output-available": <CheckCircleIcon className="size-4 text-green-600" />,
-  "output-denied": <XCircleIcon className="size-4 text-orange-600" />,
-  "output-error": <XCircleIcon className="size-4 text-red-600" />,
+  "approval-requested": <ClockIcon className="size-3.5 text-secondary-foreground" />,
+  "approval-responded": <CheckCircleIcon className="size-3.5 text-green-600" />,
+  "input-available": <ClockIcon className="size-3.5 animate-pulse text-secondary-foreground" />,
+  "input-streaming": <CircleIcon className="size-3.5 text-secondary-foreground/50" />,
+  "output-available": <CheckCircleIcon className="size-3.5 text-green-600" />,
+  "output-denied": <XCircleIcon className="size-3.5 text-orange-600" />,
+  "output-error": <XCircleIcon className="size-3.5 text-red-600" />,
 };
 
 export const getStatusBadge = (status: ToolPart["state"]) => (
-  <Badge className="gap-1.5 rounded-full text-xs" variant="secondary">
+  <Badge className="gap-1.5 rounded-full px-2 py-0 text-[10px] bg-secondary/20 text-secondary-foreground border-transparent font-medium" variant="secondary">
     {statusIcons[status]}
     {statusLabels[status]}
   </Badge>
@@ -86,14 +89,16 @@ export const ToolHeader = ({
   return (
     <CollapsibleTrigger
       className={cn(
-        "flex w-full items-center justify-between gap-4 p-3",
+        "flex w-full items-center justify-between gap-4 p-3 hover:bg-secondary/10 transition-colors",
         className
       )}
       {...props}
     >
       <div className="flex items-center gap-2">
-        <WrenchIcon className="size-4 text-muted-foreground" />
-        <span className="font-medium text-sm">{title ?? derivedName}</span>
+        <div className="rounded-full bg-secondary/20 p-1">
+          <WrenchIcon className="size-3.5 text-secondary-foreground" />
+        </div>
+        <span className="font-semibold text-sm tracking-tight">{title ?? derivedName}</span>
         {getStatusBadge(state)}
       </div>
       <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
@@ -119,10 +124,10 @@ export type ToolInputProps = ComponentProps<"div"> & {
 
 export const ToolInput = ({ className, input, ...props }: ToolInputProps) => (
   <div className={cn("space-y-2 overflow-hidden", className)} {...props}>
-    <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+    <h4 className="font-semibold text-secondary-foreground/70 text-[10px] uppercase tracking-wider">
       Parameters
     </h4>
-    <div className="rounded-md bg-muted/50">
+    <div className="rounded-lg bg-secondary/10 p-1 border border-secondary/20">
       <CodeBlock code={JSON.stringify(input, null, 2)} language="json" />
     </div>
   </div>
@@ -155,15 +160,15 @@ export const ToolOutput = ({
 
   return (
     <div className={cn("space-y-2", className)} {...props}>
-      <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+      <h4 className="font-semibold text-secondary-foreground/70 text-[10px] uppercase tracking-wider">
         {errorText ? "Error" : "Result"}
       </h4>
       <div
         className={cn(
-          "overflow-x-auto rounded-md text-xs [&_table]:w-full",
+          "overflow-x-auto rounded-lg text-xs font-mono [&_table]:w-full",
           errorText
-            ? "bg-destructive/10 text-destructive"
-            : "bg-muted/50 text-foreground"
+            ? "bg-destructive/10 text-destructive border border-destructive/20"
+            : "bg-background/50 text-foreground border border-secondary/20"
         )}
       >
         {errorText && <div>{errorText}</div>}
