@@ -6,6 +6,7 @@
     "lint": "eslint",
     "dev": "next dev",
     "server": "tsx watch src/server.ts",
+    "start": "concurrently \"npm run dev\" \"npm run server\" --kill-others",
     "cli": "tsx src/index.ts"
   },
   "dependencies": {
@@ -51,6 +52,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "shadcn": "^3.8.5",
