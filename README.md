@@ -25,6 +25,10 @@ A sophisticated multi-agent system built with [Mastra](https://mastra.ai), [Next
 - Node.js installed
 - A `.env` file with your AI provider credentials (e.g., `GOOGLE_GENERATIVE_AI_API_KEY`)
 
+### Model providers supported:
+- Azure (Set `AZURE_OPENAI_CHAT_ENDPOINT` and `AZURE_OPENAI_API_KEY`)
+- Google (Set `GOOGLE_GENERATIVE_AI_API_KEY`)
+
 ### Installation
 
 ```bash
