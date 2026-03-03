@@ -59,7 +59,7 @@ import {
     AgentTool,
 } from "@/components/ai-elements/agent";
 import { Badge } from "@/components/ui/badge";
-import { Bot, Terminal, Download, Sparkles, Wrench, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
+import { Bot, Terminal, Download, Sparkles, Wrench, ChevronLeft, ChevronRight, Copy, Check, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -87,6 +87,7 @@ interface ChatMessage {
     content: string;
     reasoning?: string;
     toolCalls?: ToolCall[];
+    feedback?: 'like' | 'dislike';
 }
 
 const CopyButton = ({ content }: { content: string }) => {
@@ -469,6 +470,17 @@ export default function ChatPage() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     };
+
+    const handleFeedback = (index: number, feedback: 'like' | 'dislike') => {
+        setMessages((prev) => {
+            const newMessages = [...prev];
+            newMessages[index] = {
+                ...newMessages[index],
+                feedback: newMessages[index].feedback === feedback ? undefined : feedback
+            };
+            return newMessages;
+        });
+    };
     return (
         <div className={cn(
             "flex h-screen w-full bg-background text-foreground font-sans transition-all duration-300",
@@ -736,6 +748,20 @@ export default function ChatPage() {
                                         {m.role === "assistant" && m.content && !isLoading && (
                                             <MessageActions className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <CopyButton content={m.content} />
+                                                <MessageAction
+                                                    onClick={() => handleFeedback(i, 'like')}
+                                                    tooltip="Like response"
+                                                    className={cn(m.feedback === 'like' && "text-primary bg-primary/10")}
+                                                >
+                                                    <ThumbsUp size={14} className={cn(m.feedback === 'like' && "fill-current")} />
+                                                </MessageAction>
+                                                <MessageAction
+                                                    onClick={() => handleFeedback(i, 'dislike')}
+                                                    tooltip="Dislike response"
+                                                    className={cn(m.feedback === 'dislike' && "text-destructive bg-destructive/10")}
+                                                >
+                                                    <ThumbsDown size={14} className={cn(m.feedback === 'dislike' && "fill-current")} />
+                                                </MessageAction>
                                             </MessageActions>
                                         )}
                                         {isLoading &&
