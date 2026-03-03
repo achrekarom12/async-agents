@@ -13,6 +13,30 @@ fastify.register(cors, {
 
 type AgentId = "skillful-agent" | "chat-agent";
 
+async function getAgentInfo(agentId: AgentId) {
+    const agent: any = agentId === "skillful-agent" ? await getSkillfulAgent() : await getChatAgent();
+    return {
+        id: agentId,
+        name: agent.name,
+        description: agent.description || agent.getDescription?.(),
+        instructions: agent.instructions || agent.getInstructions?.(),
+        model: "gpt-5-mini",
+        tools: Object.entries(agent.tools || {}).map(([name, tool]: [string, any]) => ({
+            name,
+            description: tool.description,
+            jsonSchema: tool.jsonSchema || tool.inputSchema,
+        })),
+    };
+}
+
+fastify.get("/api/agents", async (request, reply) => {
+    const agents = await Promise.all([
+        getAgentInfo("chat-agent"),
+        getAgentInfo("skillful-agent"),
+    ]);
+    return agents;
+});
+
 interface BaseChatRequest {
     chatId: string;
     agentId?: AgentId;

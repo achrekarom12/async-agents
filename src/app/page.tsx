@@ -48,8 +48,18 @@ import {
     ConfirmationActions,
     ConfirmationAction,
 } from "@/components/ai-elements/confirmation";
+import {
+    Agent,
+    AgentHeader,
+    AgentContent,
+    AgentInstructions,
+    AgentTools,
+    AgentTool,
+} from "@/components/ai-elements/agent";
 import { Badge } from "@/components/ui/badge";
-import { Bot, Terminal, Download, Sparkles, Wrench } from "lucide-react";
+import { Bot, Terminal, Download, Sparkles, Wrench, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     Select,
     SelectContent,
@@ -89,6 +99,21 @@ export default function ChatPage() {
         language?: string;
     } | null>(null);
     const [agentId, setAgentId] = useState("chat-agent");
+    const [availableAgents, setAvailableAgents] = useState<any[]>([]);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+    useEffect(() => {
+        const fetchAgents = async () => {
+            try {
+                const response = await fetch("http://127.0.0.1:8000/api/agents");
+                const data = await response.json();
+                setAvailableAgents(data);
+            } catch (error) {
+                console.error("Error fetching agents:", error);
+            }
+        };
+        fetchAgents();
+    }, []);
 
     useEffect(() => {
         setChatId(`chat_${nanoid()}`);
@@ -419,45 +444,156 @@ export default function ChatPage() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     };
-
     return (
         <div className={cn(
-            "flex h-screen bg-background text-foreground font-sans transition-all duration-300",
-            artifact ? "max-w-full" : "max-w-4xl mx-auto px-4"
+            "flex h-screen w-full bg-background text-foreground font-sans transition-all duration-300",
+            // artifact ? "max-w-full" : "max-w-4xl mx-auto px-4"
         )}>
+            {/* Sidebar for Agent Selection & Info */}
+            <aside className={cn(
+                "bg-muted/5 border-r transition-all duration-300 flex flex-col relative",
+                isSidebarOpen ? "w-80" : "w-12"
+            )}>
+                {isSidebarOpen ? (
+                    <div className="flex flex-col h-full">
+                        <header className="h-[65px] px-4 border-b flex items-center justify-between bg-background/50 backdrop-blur-sm">
+                            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Agents</h2>
+                            <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)}>
+                                <ChevronLeft size={16} />
+                            </Button>
+                        </header>
+                        <ScrollArea className="flex-1 p-4">
+                            <div className="space-y-6">
+                                {/* Agent Selection */}
+                                <div className="space-y-2">
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] px-1">Select Agent</span>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {availableAgents.map((agent) => (
+                                            <button
+                                                key={agent.id}
+                                                onClick={() => setAgentId(agent.id)}
+                                                className={cn(
+                                                    "flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-200 group",
+                                                    agentId === agent.id
+                                                        ? "bg-primary/5 border-primary shadow-sm"
+                                                        : "bg-background hover:bg-muted/50 border-transparent"
+                                                )}
+                                            >
+                                                <div className={cn(
+                                                    "p-2 rounded-lg transition-colors",
+                                                    agentId === agent.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                                )}>
+                                                    {agent.id === "chat-agent" ? <Bot size={18} /> : <Sparkles size={18} />}
+                                                </div>
+                                                <div className="flex flex-col overflow-hidden">
+                                                    <span className="text-sm font-medium truncate">{agent.name}</span>
+                                                    <span className="text-[10px] text-muted-foreground truncate">{agent.id}</span>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Selected Agent Info using Agent Element */}
+                                {availableAgents.find(a => a.id === agentId) && (
+                                    <div className="space-y-4 pt-4 border-t">
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] px-1">Agent Details</span>
+                                        <Agent className="bg-background/50 backdrop-blur-sm border-muted/50">
+                                            {(() => {
+                                                const selectedAgent = availableAgents.find(a => a.id === agentId);
+                                                return (
+                                                    <>
+                                                        <AgentHeader
+                                                            name={selectedAgent.name}
+                                                            model={selectedAgent.model}
+                                                            className="border-b bg-muted/20"
+                                                        />
+                                                        <AgentContent className="p-4 space-y-4">
+                                                            {selectedAgent.description && (
+                                                                <div className="space-y-1.5">
+                                                                    <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">Description</span>
+                                                                    <p className="text-xs text-muted-foreground leading-relaxed italic">
+                                                                        {selectedAgent.description}
+                                                                    </p>
+                                                                </div>
+                                                            )}
+
+                                                            {selectedAgent.instructions && (
+                                                                <AgentInstructions className="bg-muted/10 border-muted/20">
+                                                                    {selectedAgent.instructions.slice(0, 150) + "..."}
+                                                                </AgentInstructions>
+                                                            )}
+
+                                                            {selectedAgent.tools && selectedAgent.tools.length > 0 && (
+                                                                <AgentTools type="single" collapsible={true} className="bg-transparent border-none">
+                                                                    {selectedAgent.tools.map((tool: any, idx: number) => (
+                                                                        <AgentTool
+                                                                            key={tool.name}
+                                                                            tool={{
+                                                                                description: tool.description,
+                                                                                //@ts-ignore
+                                                                                jsonSchema: tool.jsonSchema
+                                                                            } as any}
+                                                                            value={`tool-${idx}`}
+                                                                        />
+                                                                    ))}
+                                                                </AgentTools>
+                                                            )}
+                                                        </AgentContent>
+                                                    </>
+                                                );
+                                            })()}
+                                        </Agent>
+                                    </div>
+                                )}
+                            </div>
+                        </ScrollArea>
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center py-4 gap-4">
+                        <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
+                            <ChevronRight size={16} />
+                        </Button>
+                        <div className="flex flex-col gap-3">
+                            {availableAgents.map((agent) => (
+                                <Button
+                                    key={agent.id}
+                                    variant={agentId === agent.id ? "default" : "ghost"}
+                                    size="icon"
+                                    onClick={() => setAgentId(agent.id)}
+                                    className="h-9 w-9"
+                                >
+                                    {agent.id === "chat-agent" ? <Bot size={16} /> : <Sparkles size={16} />}
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </aside>
+
             {/* Main Chat Section */}
             <div className={cn(
-                "flex flex-col h-full transition-all duration-300",
-                artifact ? "w-1/2 border-r px-4" : "w-full"
+                "flex flex-col h-full transition-all duration-300 flex-1 min-w-0",
+                artifact ? "w-1/2 border-r" : "w-full"
             )}>
                 {/* Header */}
-                <header className="flex items-center justify-between py-6">
-                    <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                        <h1 className="text-sm font-semibold tracking-tight">AI Assistant</h1>
+                <header className="h-[65px] flex items-center justify-between px-6 border-b bg-background/50 backdrop-blur-sm sticky top-0 z-10">
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.8)]" />
+                            <h1 className="text-sm font-semibold tracking-tight">
+                                {availableAgents.find(a => a.id === agentId)?.name || "AI Assistant"}
+                            </h1>
+                        </div>
                     </div>
                     <div className="flex items-center gap-4">
-                        <Select value={agentId} onValueChange={setAgentId}>
-                            <SelectTrigger size="sm" className="w-[140px] h-7 text-[10px] font-medium uppercase tracking-wider">
-                                <SelectValue placeholder="Select Agent" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="chat-agent">
-                                    <div className="flex items-center gap-2">
-                                        <Bot size={12} />
-                                        <span>Chat Agent</span>
-                                    </div>
-                                </SelectItem>
-                                <SelectItem value="skillful-agent">
-                                    <div className="flex items-center gap-2">
-                                        <Sparkles size={12} />
-                                        <span>Skillful Agent</span>
-                                    </div>
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <div className="text-[10px] text-muted-foreground font-mono tracking-widest uppercase">
-                            {chatId.split("_")[1]?.slice(0, 8)}
+                        <div className="flex items-center gap-2 px-2 py-1 bg-muted/30 rounded-full">
+                            <div className="w-3 h-3 flex items-center justify-center bg-background rounded-full">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                            </div>
+                            <div className="text-[10px] text-muted-foreground font-mono tracking-wider tabular-nums">
+                                {chatId.split("_")[1]?.slice(0, 8)}
+                            </div>
                         </div>
                     </div>
                 </header>
@@ -590,7 +726,7 @@ export default function ChatPage() {
                 </Conversation>
 
                 {/* Input */}
-                <footer className="py-6 pt-0">
+                <footer className="p-4 pb-8 max-w-4xl mx-auto w-full">
                     <PromptInput
                         onSubmit={(message) => handleSubmit(message)}
                         className="relative w-full"
