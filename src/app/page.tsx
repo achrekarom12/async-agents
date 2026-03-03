@@ -730,7 +730,7 @@ export default function ChatPage() {
                     <PromptInput
                         onSubmit={(message) => handleSubmit(message)}
                         className="relative w-full"
-                        inputGroupClassName="rounded-xl border bg-background shadow-sm focus-within:ring-1 focus-within:ring-ring overflow-hidden"
+                        inputGroupClassName="rounded-xl border bg-background shadow-sm focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-500/40 focus-within:shadow-[0_0_20px_rgba(168,85,247,0.15)] transition-all duration-300 overflow-hidden"
                     >
                         <PromptInputTextarea
                             value={inputValue}
