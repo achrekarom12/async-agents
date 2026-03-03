@@ -10,6 +10,8 @@ import {
     Message,
     MessageContent,
     MessageResponse,
+    MessageActions,
+    MessageAction,
 } from "@/components/ai-elements/message";
 import {
     PromptInput,
@@ -57,7 +59,7 @@ import {
     AgentTool,
 } from "@/components/ai-elements/agent";
 import { Badge } from "@/components/ui/badge";
-import { Bot, Terminal, Download, Sparkles, Wrench, ChevronLeft, ChevronRight } from "lucide-react";
+import { Bot, Terminal, Download, Sparkles, Wrench, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -86,6 +88,29 @@ interface ChatMessage {
     reasoning?: string;
     toolCalls?: ToolCall[];
 }
+
+const CopyButton = ({ content }: { content: string }) => {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(content);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error("Failed to copy text: ", err);
+        }
+    };
+
+    return (
+        <MessageAction
+            onClick={handleCopy}
+            tooltip={copied ? "Copied!" : "Copy message"}
+        >
+            {copied ? <Check size={14} /> : <Copy size={14} />}
+        </MessageAction>
+    );
+};
 
 export default function ChatPage() {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -708,6 +733,11 @@ export default function ChatPage() {
                                             </Reasoning>
                                         )}
                                         {m.content && <MessageResponse>{m.content}</MessageResponse>}
+                                        {m.role === "assistant" && m.content && !isLoading && (
+                                            <MessageActions className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <CopyButton content={m.content} />
+                                            </MessageActions>
+                                        )}
                                         {isLoading &&
                                             i === messages.length - 1 &&
                                             m.role === "assistant" &&
