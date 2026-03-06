@@ -1,6 +1,6 @@
-# Mastra Multi-Agents
+# Playground for  Multi-Agents using Mastra
 
-A sophisticated multi-agent system built with [Mastra](https://mastra.ai), [Next.js](https://nextjs.org), and [Fastify](https://fastify.io). This project demonstrates how to build, deploy, and interact with multiple AI agents through various interfaces.
+A multi-agent system built with [Mastra](https://mastra.ai), [Next.js](https://nextjs.org), and [Fastify](https://fastify.io). This project demonstrates how to build, deploy, and interact with multiple AI agents through various interfaces.
 
 ## 🚀 Features
 
@@ -13,7 +13,7 @@ A sophisticated multi-agent system built with [Mastra](https://mastra.ai), [Next
 
 ## 🛠 Tech Stack
 
-- **Framework**: [Mastra Core](https://mastra.ai)
+- **Framework**: [Mastra](https://mastra.ai)
 - **Frontend**: Next.js 15+, React 19, Tailwind CSS
 - **Backend**: Fastify, Vercel AI SDK
 - **Runtime**: Node.js, TypeScript
